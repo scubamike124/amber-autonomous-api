@@ -1,0 +1,79 @@
+{
+  "info": {
+    "name": "Amber Autonomous API",
+    "description": "Separate product from AmberOne Wrap API. Base: https://hq.amberoneai.com. Set apiKey to wrap_test_… to evaluate without consuming paid quota.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "https://hq.amberoneai.com" },
+    { "key": "apiKey", "value": "" },
+    { "key": "jobId", "value": "" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{apiKey}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Account",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/account",
+        "description": "Confirms the key and shows wrap + autonomous quotas."
+      }
+    },
+    {
+      "name": "Submit autonomous job",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "pm.request.headers.upsert({ key: 'Idempotency-Key', value: 'pm-' + Date.now() });"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const j = pm.response.json();",
+              "if (j.ok && j.data && j.data.id) { pm.collectionVariables.set('jobId', j.data.id); }"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"goal\": \"Resolve video credentials, run a dry autonomous checklist, recover if primary fails, verify, return result.\",\n  \"providers\": [\"KIE_API_KEY\"],\n  \"injectFailure\": true\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/autonomous/jobs"
+      }
+    },
+    {
+      "name": "Get autonomous job",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/autonomous/jobs/{{jobId}}"
+      }
+    },
+    {
+      "name": "List autonomous jobs",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/autonomous/jobs?limit=10"
+      }
+    },
+    {
+      "name": "Cancel autonomous job",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/v1/autonomous/jobs/{{jobId}}"
+      }
+    }
+  ]
+}

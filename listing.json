@@ -1,0 +1,92 @@
+{
+  "name": "Amber Autonomous API",
+  "version": "1.0.0",
+  "tagline": "Submit a multi-step goal. Amber works in the cloud and returns a verified result.",
+  "baseUrl": "https://hq.amberoneai.com",
+  "specUrl": "https://hq.amberoneai.com/api/v1/openapi.json",
+  "repository": "https://github.com/scubamike124/amber-autonomous-api",
+  "termsUrl": "https://amberoneai.com/terms",
+  "privacyUrl": "https://amberoneai.com/privacy",
+  "relatedProduct": {
+    "name": "AmberOne Wrap API",
+    "repository": "https://github.com/scubamike124/amberone-api",
+    "path": "/api/v1/jobs",
+    "note": "Separate product — site-to-app packaging. Do not confuse with /api/v1/autonomous/jobs."
+  },
+  "license": { "code": "MIT", "service": "Commercial" },
+  "categories": {
+    "rapidapi": ["Artificial Intelligence", "Tools"],
+    "postman": ["AI", "Developer Tools"]
+  },
+  "tags": ["autonomous", "agent", "jobs", "ai", "orchestration", "amber"],
+  "shortDescription": "POST a goal, get a job ID, poll until Amber completes a verified multi-step result in the cloud.",
+  "longDescription": "Amber Autonomous API queues multi-step goals. A cloud worker plans, resolves credentials (presence/last4 only), runs tools, recovers, verifies, and completes. Separate from the AmberOne Wrap API.",
+  "endpointCount": 4,
+  "authentication": "Bearer token (also accepts X-API-Key). Keys wrap_live_ / wrap_test_. Scope autonomous or full.",
+  "sandbox": "Keys prefixed wrap_test_ run the full pipeline and never consume paid autonomous quota.",
+  "packaging": "bundled",
+  "pricingStatus": "bundled_into_amberone_plans",
+  "pricingNote": "Sellable path is AmberOne Starter ($79) / Growth ($249) with autonomousJobsPerPeriod 15 / 60. Standalone tiers below are recommended catalog only until owner activates live Stripe prices.",
+  "tiers": [
+    {
+      "slug": "free",
+      "autonomousJobsPerPeriod": 3,
+      "autonomousConcurrentJobs": 1,
+      "requestsPerMinute": 20,
+      "recommendedPriceUsd": 0,
+      "billing": "free",
+      "sellable": true,
+      "pricingRationale": "Three jobs to evaluate before paying."
+    },
+    {
+      "slug": "starter",
+      "autonomousJobsPerPeriod": 15,
+      "autonomousConcurrentJobs": 1,
+      "requestsPerMinute": 120,
+      "recommendedPriceUsd": 79,
+      "billing": "monthly",
+      "sellable": true,
+      "pricingRationale": "Bundled into AmberOne Starter. Caps expensive provider usage."
+    },
+    {
+      "slug": "growth",
+      "autonomousJobsPerPeriod": 60,
+      "autonomousConcurrentJobs": 3,
+      "requestsPerMinute": 300,
+      "recommendedPriceUsd": 249,
+      "billing": "monthly",
+      "sellable": true,
+      "pricingRationale": "Bundled into AmberOne Growth."
+    },
+    {
+      "slug": "aa_developer",
+      "autonomousJobsPerPeriod": 20,
+      "autonomousConcurrentJobs": 1,
+      "requestsPerMinute": 60,
+      "recommendedPriceUsd": 99,
+      "billing": "monthly",
+      "sellable": false,
+      "pricingRationale": "Recommended standalone SKU — pending owner live activation. ~$5/job budget headroom."
+    },
+    {
+      "slug": "aa_professional",
+      "autonomousJobsPerPeriod": 80,
+      "autonomousConcurrentJobs": 3,
+      "requestsPerMinute": 120,
+      "recommendedPriceUsd": 299,
+      "billing": "monthly",
+      "sellable": false,
+      "pricingRationale": "Recommended standalone SKU — pending owner live activation."
+    },
+    {
+      "slug": "aa_agency",
+      "autonomousJobsPerPeriod": 250,
+      "autonomousConcurrentJobs": 8,
+      "requestsPerMinute": 300,
+      "recommendedPriceUsd": 799,
+      "billing": "monthly",
+      "sellable": false,
+      "pricingRationale": "Recommended standalone SKU — pending owner live activation. No unlimited provider usage."
+    }
+  ]
+}

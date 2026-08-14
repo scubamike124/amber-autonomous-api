@@ -1,0 +1,1210 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Amber Autonomous API",
+    "version": "1.0.0",
+    "summary": "Submit a multi-step goal. Amber works in the cloud and returns a verified result.",
+    "description": "Amber Autonomous API is a separate product from the AmberOne Wrap API.\n\nPOST /api/v1/autonomous/jobs → job ID (202). Cloud worker plans, runs, recovers, verifies.\nWrap packaging is /api/v1/jobs — different capability and quotas.",
+    "license": {
+      "name": "Commercial",
+      "url": "https://amberoneai.com/terms"
+    },
+    "termsOfService": "https://amberoneai.com/terms",
+    "contact": {
+      "name": "AmberOne API support",
+      "url": "https://amberoneai.com/privacy"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://hq.amberoneai.com",
+      "description": "Production"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "account",
+      "description": "Key, plan and usage."
+    },
+    {
+      "name": "usage",
+      "description": "Metered consumption."
+    },
+    {
+      "name": "autonomous",
+      "description": "Autonomous jobs."
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Send your API key as `Authorization: Bearer wrap_live_…`. `X-API-Key: <key>` is also accepted. Keys beginning `wrap_test_` run the full pipeline and are never billed."
+      }
+    },
+    "schemas": {
+      "ApiSuccess": {
+        "type": "object",
+        "required": [
+          "ok",
+          "data",
+          "requestId"
+        ],
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "description": "Endpoint-specific payload."
+          },
+          "requestId": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiError": {
+        "type": "object",
+        "required": [
+          "ok",
+          "error",
+          "requestId"
+        ],
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "const": false
+          },
+          "error": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "invalid_request",
+                  "url_rejected",
+                  "unsupported_platform",
+                  "missing_api_key",
+                  "invalid_api_key",
+                  "api_key_revoked",
+                  "api_key_expired",
+                  "forbidden",
+                  "plan_required",
+                  "not_found",
+                  "job_not_cancellable",
+                  "conflict",
+                  "payload_too_large",
+                  "quota_exceeded",
+                  "rate_limited",
+                  "internal_error",
+                  "not_implemented",
+                  "upstream_unavailable"
+                ]
+              },
+              "message": {
+                "type": "string"
+              },
+              "details": {
+                "description": "Validation detail, when applicable."
+              }
+            }
+          },
+          "requestId": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/api/v1/account": {
+      "get": {
+        "operationId": "getAccount",
+        "summary": "Account, plan and usage",
+        "description": "Returns the account the key belongs to, the plan's limits, and usage for the current billing period. Call this first to confirm a key works — it consumes no wrap quota.",
+        "tags": [
+          "account"
+        ],
+        "responses": {
+          "200": {
+            "description": "Account, key, plan and usage.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccess"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`missing_api_key`, `invalid_api_key`, `api_key_revoked`, `api_key_expired`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "missing_api_key": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "missing_api_key",
+                        "message": "No API key was supplied. Send Authorization: Bearer <key>."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  },
+                  "invalid_api_key": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "invalid_api_key",
+                        "message": "The API key is not recognised."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  },
+                  "api_key_revoked": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "api_key_revoked",
+                        "message": "This API key has been revoked."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  },
+                  "api_key_expired": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "api_key_expired",
+                        "message": "This API key has expired."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`rate_limited`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "rate_limited": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "rate_limited",
+                        "message": "Too many requests. Retry after the interval in Retry-After."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "internal_error": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "internal_error",
+                        "message": "Something failed on our side. The requestId identifies this occurrence."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/usage": {
+      "get": {
+        "operationId": "getUsage",
+        "summary": "Usage detail",
+        "description": "Usage broken down by kind and day for the requested window, with live and test separated.",
+        "tags": [
+          "usage"
+        ],
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 365,
+              "default": 30
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Usage detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`invalid_request`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "invalid_request": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "invalid_request",
+                        "message": "The request body or query parameters failed validation."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`missing_api_key`, `invalid_api_key`, `api_key_revoked`, `api_key_expired`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "missing_api_key": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "missing_api_key",
+                        "message": "No API key was supplied. Send Authorization: Bearer <key>."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  },
+                  "invalid_api_key": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "invalid_api_key",
+                        "message": "The API key is not recognised."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  },
+                  "api_key_revoked": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "api_key_revoked",
+                        "message": "This API key has been revoked."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  },
+                  "api_key_expired": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "api_key_expired",
+                        "message": "This API key has expired."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`rate_limited`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "rate_limited": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "rate_limited",
+                        "message": "Too many requests. Retry after the interval in Retry-After."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "internal_error": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "internal_error",
+                        "message": "Something failed on our side. The requestId identifies this occurrence."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/autonomous/jobs": {
+      "post": {
+        "operationId": "postAutonomousJobs",
+        "summary": "Submit an autonomous job",
+        "description": "Queues a multi-step autonomous goal. Returns 202 with a job id immediately — a cloud worker plans, resolves credentials (presence/last4 only), runs tools, recovers, verifies, then completes. Poll GET /api/v1/autonomous/jobs/{id}. Separate product from wrap jobs at /api/v1/jobs.",
+        "tags": [
+          "autonomous"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "goal": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 8000
+                  },
+                  "steps": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    },
+                    "maxItems": 40
+                  },
+                  "providers": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "maxItems": 20
+                  },
+                  "injectFailure": {
+                    "type": "boolean"
+                  },
+                  "webhookUrl": {
+                    "type": "string",
+                    "maxLength": 2000
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "goal"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "The queued autonomous job.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`invalid_request`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "invalid_request": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "invalid_request",
+                        "message": "The request body or query parameters failed validation."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`missing_api_key`, `invalid_api_key`, `api_key_revoked`, `api_key_expired`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "missing_api_key": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "missing_api_key",
+                        "message": "No API key was supplied. Send Authorization: Bearer <key>."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  },
+                  "invalid_api_key": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "invalid_api_key",
+                        "message": "The API key is not recognised."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  },
+                  "api_key_revoked": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "api_key_revoked",
+                        "message": "This API key has been revoked."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  },
+                  "api_key_expired": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "api_key_expired",
+                        "message": "This API key has expired."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "forbidden": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "forbidden",
+                        "message": "This key is not permitted to perform that action."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`quota_exceeded`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "quota_exceeded": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "quota_exceeded",
+                        "message": "Your plan's quota for this period is exhausted."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`rate_limited`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "rate_limited": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "rate_limited",
+                        "message": "Too many requests. Retry after the interval in Retry-After."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "internal_error": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "internal_error",
+                        "message": "Something failed on our side. The requestId identifies this occurrence."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "getAutonomousJobs",
+        "summary": "List autonomous jobs",
+        "description": "Lists this account's autonomous jobs, newest first, with cursor pagination.",
+        "tags": [
+          "autonomous"
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "QUEUED",
+                "PLANNING",
+                "RUNNING",
+                "RECOVERING",
+                "VERIFYING",
+                "COMPLETED",
+                "FAILED",
+                "CANCELLED"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of autonomous jobs.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`invalid_request`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "invalid_request": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "invalid_request",
+                        "message": "The request body or query parameters failed validation."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`missing_api_key`, `invalid_api_key`, `api_key_revoked`, `api_key_expired`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "missing_api_key": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "missing_api_key",
+                        "message": "No API key was supplied. Send Authorization: Bearer <key>."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  },
+                  "invalid_api_key": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "invalid_api_key",
+                        "message": "The API key is not recognised."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  },
+                  "api_key_revoked": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "api_key_revoked",
+                        "message": "This API key has been revoked."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  },
+                  "api_key_expired": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "api_key_expired",
+                        "message": "This API key has expired."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`rate_limited`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "rate_limited": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "rate_limited",
+                        "message": "Too many requests. Retry after the interval in Retry-After."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "internal_error": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "internal_error",
+                        "message": "Something failed on our side. The requestId identifies this occurrence."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/autonomous/jobs/{id}": {
+      "get": {
+        "operationId": "getAutonomousJobsId",
+        "summary": "Get autonomous job status / result",
+        "description": "Returns status, stages, evidence (no secrets), and the verified result when COMPLETED. Poll after submit.",
+        "tags": [
+          "autonomous"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Autonomous job id.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The autonomous job.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccess"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`missing_api_key`, `invalid_api_key`, `api_key_revoked`, `api_key_expired`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "missing_api_key": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "missing_api_key",
+                        "message": "No API key was supplied. Send Authorization: Bearer <key>."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  },
+                  "invalid_api_key": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "invalid_api_key",
+                        "message": "The API key is not recognised."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  },
+                  "api_key_revoked": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "api_key_revoked",
+                        "message": "This API key has been revoked."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  },
+                  "api_key_expired": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "api_key_expired",
+                        "message": "This API key has expired."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_found`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "not_found": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "not_found",
+                        "message": "No such resource for this account."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`rate_limited`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "rate_limited": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "rate_limited",
+                        "message": "Too many requests. Retry after the interval in Retry-After."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "internal_error": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "internal_error",
+                        "message": "Something failed on our side. The requestId identifies this occurrence."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteAutonomousJobsId",
+        "summary": "Cancel an autonomous job",
+        "description": "Cancels a job that has not reached a terminal state. Finished jobs return conflict.",
+        "tags": [
+          "autonomous"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Autonomous job id.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The cancelled job.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccess"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`missing_api_key`, `invalid_api_key`, `api_key_revoked`, `api_key_expired`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "missing_api_key": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "missing_api_key",
+                        "message": "No API key was supplied. Send Authorization: Bearer <key>."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  },
+                  "invalid_api_key": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "invalid_api_key",
+                        "message": "The API key is not recognised."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  },
+                  "api_key_revoked": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "api_key_revoked",
+                        "message": "This API key has been revoked."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  },
+                  "api_key_expired": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "api_key_expired",
+                        "message": "This API key has expired."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_found`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "not_found": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "not_found",
+                        "message": "No such resource for this account."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`job_not_cancellable`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "job_not_cancellable": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "job_not_cancellable",
+                        "message": "The job has already finished and cannot be cancelled."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`rate_limited`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "rate_limited": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "rate_limited",
+                        "message": "Too many requests. Retry after the interval in Retry-After."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "internal_error": {
+                    "value": {
+                      "ok": false,
+                      "error": {
+                        "code": "internal_error",
+                        "message": "Something failed on our side. The requestId identifies this occurrence."
+                      },
+                      "requestId": "req_0f3c1a9b2e4d"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "x-error-codes": {
+    "invalid_request": {
+      "status": 400,
+      "message": "The request body or query parameters failed validation."
+    },
+    "url_rejected": {
+      "status": 400,
+      "message": "The submitted URL was rejected by the safety gate."
+    },
+    "unsupported_platform": {
+      "status": 400,
+      "message": "One or more requested platforms are not supported."
+    },
+    "missing_api_key": {
+      "status": 401,
+      "message": "No API key was supplied. Send Authorization: Bearer <key>."
+    },
+    "invalid_api_key": {
+      "status": 401,
+      "message": "The API key is not recognised."
+    },
+    "api_key_revoked": {
+      "status": 401,
+      "message": "This API key has been revoked."
+    },
+    "api_key_expired": {
+      "status": 401,
+      "message": "This API key has expired."
+    },
+    "forbidden": {
+      "status": 403,
+      "message": "This key is not permitted to perform that action."
+    },
+    "plan_required": {
+      "status": 403,
+      "message": "Your plan does not include this capability."
+    },
+    "not_found": {
+      "status": 404,
+      "message": "No such resource for this account."
+    },
+    "job_not_cancellable": {
+      "status": 409,
+      "message": "The job has already finished and cannot be cancelled."
+    },
+    "conflict": {
+      "status": 409,
+      "message": "The request conflicts with the current state of the resource."
+    },
+    "payload_too_large": {
+      "status": 413,
+      "message": "The request body exceeds the permitted size."
+    },
+    "quota_exceeded": {
+      "status": 422,
+      "message": "Your plan's quota for this period is exhausted."
+    },
+    "rate_limited": {
+      "status": 429,
+      "message": "Too many requests. Retry after the interval in Retry-After."
+    },
+    "internal_error": {
+      "status": 500,
+      "message": "Something failed on our side. The requestId identifies this occurrence."
+    },
+    "not_implemented": {
+      "status": 501,
+      "message": "This capability is not available yet."
+    },
+    "upstream_unavailable": {
+      "status": 503,
+      "message": "A dependency was unavailable. Safe to retry."
+    }
+  }
+}

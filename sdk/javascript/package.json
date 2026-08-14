@@ -1,0 +1,12 @@
+{
+  "name": "@amberone/autonomous-api",
+  "version": "1.0.0",
+  "description": "Amber Autonomous API client — separate from AmberOne Wrap API",
+  "type": "module",
+  "main": "src/index.ts",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/scubamike124/amber-autonomous-api.git"
+  }
+}

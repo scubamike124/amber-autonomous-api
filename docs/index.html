@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Amber Autonomous API — reference</title>
+  <meta name="description" content="Submit a multi-step goal. Amber works in the cloud and returns a verified result. Separate from the AmberOne Wrap API." />
+  <meta property="og:title" content="Amber Autonomous API" />
+  <meta property="og:description" content="POST a goal, get a job ID, poll until Amber completes a verified result." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://scubamike124.github.io/amber-autonomous-api/" />
+  <style>
+    :root { color-scheme: light dark; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    header {
+      padding: 2.5rem 1.5rem 2rem;
+      background: linear-gradient(135deg, #0b0b12 0%, #1a1430 55%, #16213e 100%);
+      color: #fff;
+    }
+    .wrap { max-width: 62rem; margin: 0 auto; }
+    h1 { margin: 0 0 .35rem; font-size: clamp(1.6rem, 4vw, 2.2rem); }
+    .tag { margin: 0 0 1.25rem; opacity: .85; font-size: 1.05rem; }
+    .row { display: flex; flex-wrap: wrap; gap: .6rem; }
+    .btn {
+      display: inline-block; padding: .5rem .95rem; border-radius: 6px;
+      background: #c9a227; color: #0b0b12; text-decoration: none; font-weight: 600; font-size: .92rem;
+    }
+    .btn.ghost { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.35); }
+    .note { max-width: 62rem; margin: 1.25rem auto; padding: 0 1.5rem; }
+    code {
+      background: rgba(127,127,127,.16); padding: .12em .4em; border-radius: 4px;
+      font-size: .9em; word-break: break-all;
+    }
+    #redoc, .note { overflow-x: auto; }
+    #fallback { display: none; padding: 1rem 1.5rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <h1>Amber Autonomous API</h1>
+      <p class="tag">Submit a multi-step goal. Amber works in the cloud and returns a verified result.</p>
+      <div class="row">
+        <a class="btn" href="https://hq.amberoneai.com/pricing">Get an API key</a>
+        <a class="btn ghost" href="https://github.com/scubamike124/amber-autonomous-api">Source</a>
+        <a class="btn ghost" href="https://github.com/scubamike124/amberone-api">Wrap API (separate)</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="note">
+    <p>
+      <strong>Separate product</strong> from the AmberOne Wrap API
+      (<code>/api/v1/jobs</code>). This product uses
+      <code>/api/v1/autonomous/jobs</code>.
+    </p>
+    <p>
+      Evaluating is free with keys beginning <code>wrap_test_</code>
+      (full pipeline, no paid quota). Production:
+      <code>https://hq.amberoneai.com</code>
+    </p>
+    <p>
+      Postman import:
+      <code>https://raw.githubusercontent.com/scubamike124/amber-autonomous-api/main/postman_collection.json</code>
+    </p>
+  </div>
+
+  <div id="fallback" class="note">
+    <p>
+      Interactive reference failed to load. Use
+      <a href="../openapi.json">openapi.json</a>
+      or
+      <a href="https://hq.amberoneai.com/api/v1/openapi.json">live OpenAPI</a>.
+    </p>
+  </div>
+
+  <div id="redoc"></div>
+  <script src="https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"></script>
+  <script>
+    Redoc.init('../openapi.json', {}, document.getElementById('redoc'), function (e) {
+      if (e) document.getElementById('fallback').style.display = 'block';
+    });
+  </script>
+</body>
+</html>
